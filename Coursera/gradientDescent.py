@@ -73,7 +73,7 @@ def cost_func_linear_1(data, params):
     * Uses squared differences
     """
     p0, p1 = params
-    return sum([((p0 + x * p1) - y_actual) ** (2) for x, y_actual in data])
+    return sum([(p0 + x * p1 - y_actual) ** (2) for x, y_actual in data])/len(data)
 
 
 x_data = list(range(0, 10))
