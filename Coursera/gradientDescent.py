@@ -85,6 +85,21 @@ def get_changes(LRN_RT, data, hypothesis_func, cur_params):
     return (-LRN_RT/len(data['y'])) * get_sigmas(get_delta_ys(hypothesis_func, data, cur_params), data['x'])
 
 
+def get_changes_unvectorized(cur_params, calc_cost, cost, data, LRN_RT):
+    changes = [1.0] * len(cur_params)
+    D_PARAM = 0.00001
+    # for each parameter, calculate the upcoming partial derivative and change
+    for i in range(len(cur_params)):
+        next_params = [
+            param + D_PARAM if i == j else param 
+            for j, param in enumerate(cur_params)
+        ]
+        delta_cost = calc_cost(data['x'], data['y'], np.array(next_params))  - cost
+        partial_deriv = delta_cost/D_PARAM
+        changes[i] = -LRN_RT * partial_deriv
+    return changes
+
+
 def descent(data, calc_cost: cf_type, hypothesis_func: hf_type, initial_params: np_a, **kwargs):
     """General gradient descent"""
     T_COST = kwargs.pop('t_cost', DEF_TERMINAL_COST)
@@ -103,9 +118,10 @@ def descent(data, calc_cost: cf_type, hypothesis_func: hf_type, initial_params: 
             n_its < MAX_ITS 
         ):
         n_its += 1
-        changes = get_changes(LRN_RT, data, hypothesis_func, cur_params)
-        cur_params = cur_params + changes
         cost = calc_cost(data['x'], data['y'], cur_params)    
+        changes = get_changes(LRN_RT, data, hypothesis_func, cur_params)
+        changes_unvectorized = get_changes_unvectorized(cur_params, calc_cost, cost, data, LRN_RT)
+        cur_params = cur_params + changes
     return [
         *[f"p{i}={round(p,2)}" for i, p in enumerate(cur_params)],
         f"cost={round(cost, 2)}", 
@@ -134,10 +150,10 @@ x_data_linear = np.array(list(zip([1] * 100, range(0, 100))), dtype="float64")
 examples = [
     # Different learning rates
     # ([0,0,0], [6,7,3], linear_hypothesis, x_data, cost_func_linear, linear_hypothesis, 0.00001),
-    ([0,0], [6,7], linear_hypothesis, x_data_linear, cost_func_linear, linear_hypothesis, 0.03),
+    # ([0,0], [6,7], linear_hypothesis, x_data_linear, cost_func_linear, linear_hypothesis, 0.03),
     # ([0,0,0], [0,5,5], linear_hypothesis, x_data, cost_func_linear, linear_hypothesis, 0.0001),
     # ([100,0,0], [100,5,5], linear_hypothesis, x_data, cost_func_linear, linear_hypothesis, 0.0001),
-    # ([0,0,0], [6,7,3], linear_hypothesis, x_data, cost_func_linear, linear_hypothesis, 0.001),
+    ([0,0,0], [6,7,3], linear_hypothesis, x_data, cost_func_linear, linear_hypothesis, 0.001),
     # ([0,0,0], [6,7,3], linear_hypothesis, x_data, cost_func_linear, linear_hypothesis, 0.01),
     # ([0,0,0], [6,7,3], linear_hypothesis, x_data, cost_func_linear, linear_hypothesis, 0.02),
     # ([0,0,0], [6,7,3], linear_hypothesis, x_data, cost_func_linear, linear_hypothesis, 0.1),
