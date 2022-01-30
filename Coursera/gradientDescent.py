@@ -39,7 +39,7 @@ def scale_features(x_data):
     ]
     """
     n_features = len(x_data[0])
-    for i in range(0, n_features):
+    for i in range(1, n_features):
         x_data[:, i] = (x_data[:, i] - np.mean(x_data[:,i])) / (np.max(x_data[:, i]) - np.min(x_data[:, i]))
     return x_data
 
@@ -86,8 +86,8 @@ def linear_noisy_factory(noise_sd):
 
 def test():
     assert \
-        all((np.round_(scale_features(np.array([(101,2), (99,5), (22,4)], dtype="float64")), 2) == \
-            np.array([(0.34, -0.56), (0.32, 0.44), (-0.66, 0.11)])).reshape(-1)
+        all((np.round_(scale_features(np.array([(1,101,2), (1,99,5), (1,22,4)], dtype="float64")), 2) == \
+            np.array([(1,0.34, -0.56), (1,0.32, 0.44), (1,-0.66, 0.11)])).reshape(-1)
         ), \
         "Something's wrong with feature scaling"
 
@@ -99,6 +99,7 @@ x_data = np.array(list(zip(
 )
 
 examples = [
+    ([0,0,0], [6,7,3], x_data, 0.00003),
     ([0,0,0], [6,7,3], x_data, 0.0001),
     ([0,0,0], [6,7,3], x_data, 0.0003),
     ([0,0,0], [6,7,3], x_data, 0.001),
@@ -122,7 +123,7 @@ def run():
     performance = []
     for init_p, real_p, X, lrn_rt in examples:
         X = X.copy()
-        X = scale_features(X)
+        # X = scale_features(X)
         X = np.hstack((np.ones((len(X),1)), X))
         targets = X.dot(np.array(real_p).T)
         start = time.time()
