@@ -11,10 +11,49 @@ import time
 import random
 import numpy as np
 from pprint import pprint
+import matplotlib.pyplot as plt
+
+
 
 DEF_TERMINAL_COST = 0.0001
 DEF_MAX_ITERATIONS = 10 ** 5
 DEF_LEARNING_RATE = 0.001
+
+
+def plot_convergence(cost_history):
+    its = len(cost_history)
+    plt.plot(cost_history[::its//100])
+    plt.ylabel("Cost")
+    plt.xlabel("% Iterations")
+    r = ''
+
+def plot_logistic_2d(x0, x1, targets, theta):
+    fig, ax = plt.subplots()
+    colors = ['b' if p < 0.5 else 'r' for p in targets]
+    ax.scatter(x0, x1, c=colors)
+    # plot boundary line by finding plot's transition points (between thetaX >=0 and thetaX < 0)
+    x0_max = int(max(x0))
+    x0_min = int(min(x0))
+    x1_max = int(max(x1))
+    x1_min = int(min(x1))
+    x0_b = []
+    x1_b = []
+    b_points = 0
+    prev_prediction_is_positive = theta.dot([1, x0_min, x1_min]) >= 0
+    for i in range(x0_min + 1, x0_max + 1):
+        for j in range(x1_min - 1, x1_max + 1):
+            cur_prediction_is_positive = theta.dot([1, i, j]) >= 0
+            if cur_prediction_is_positive != prev_prediction_is_positive:
+                x0_b.append(i)
+                x1_b.append(j)
+                b_points += 1
+            prev_prediction_is_positive = cur_prediction_is_positive
+    colors = ['k'] * b_points
+    ax.scatter(x0_b, x1_b, c=colors)
+
+    plt.show()
+    plt.xlabel('x0')
+    plt.ylabel('x1')
 
 
 def scale_features(x_data):
@@ -25,7 +64,33 @@ def scale_features(x_data):
     return x_data
 
 
-def descent(X, targets, theta, **kwargs):
+def calc_cost_linear(m, **kwargs):
+    return kwargs['ers'].T.dot(kwargs['ers'])/(2*m)
+
+
+def calc_cost_logistic(m, **kwargs):
+    return (-kwargs['ts'].T.dot(np.log(kwargs['ps'])) - (1-kwargs['ts']).T.dot(np.log(1-kwargs['ps']))) / m
+
+
+def hypothesis_linear(thetaTX):
+    return thetaTX
+
+
+def hypothesis_logistic(thetaTX):
+    return 1 / (1 + np.exp(-thetaTX))
+
+
+def linear_noisy_factory(noise_sd):
+    """Produce linear generators with specified noise levels"""
+
+    def linear_noisy(X, params):
+        """Produce linearly-x-dependent y data, with noise"""
+        return X.dot(np.array(params).T) + np.array([[random.gauss(0, noise_sd)] for _ in range(len(X))])
+
+    return linear_noisy
+
+
+def descent(X, targets, theta, hypothesis, calc_cost, **kwargs):
     """Gradient descent"""
     T_COST = kwargs.pop('t_cost', DEF_TERMINAL_COST)
     MAX_ITS = kwargs.pop('max_its', DEF_MAX_ITERATIONS)
@@ -39,30 +104,22 @@ def descent(X, targets, theta, **kwargs):
             cost > T_COST and
             n_its < MAX_ITS 
         ):
-        predictions = theta.T.dot(X)
+        predictions = hypothesis(theta.T.dot(X))
         errors = predictions - targets
         delta = (LRN_RT / m) * X.dot(errors)
         theta = theta - delta
-        cost = errors.T.dot(errors)/(2*m)
+        cost = calc_cost(m, ers=errors, ts=targets, ps=predictions)
         cost_history = np.append(cost_history, cost)
         n_its += 1
 
+    plot_logistic_2d(X[1], X[2], targets, theta)
+    # plot_convergence(cost_history)
     return [
         *[f"p{i}={round(p,2)}" for i, p in enumerate(theta)],
         f"cost={round(cost, 2)}", 
         n_its,
         # cost_history
     ]
-
-
-def linear_noisy_factory(noise_sd):
-    """Produce linear generators with specified noise levels"""
-
-    def linear_noisy(X, params):
-        """Produce linearly-x-dependent y data, with noise"""
-        return X.dot(np.array(params).T) + np.array([[random.gauss(0, noise_sd)] for _ in range(len(X))])
-
-    return linear_noisy
 
 
 x_data = np.array(
@@ -74,39 +131,40 @@ x_data = np.array(
 )
 
 examples = [
-    ([0,0,0], [6,7,3], x_data, 0.00003),
-    ([0,0,0], [6,7,3], x_data, 0.0001),
-    ([0,0,0], [6,7,3], x_data, 0.0003),
-    ([0,0,0], [6,7,3], x_data, 0.001),
-    ([0,0,0], [6,7,3], x_data, 0.003),
-    ([0,0,0], [6,7,3], x_data, 0.01),
-    ([0,0,0], [6,7,3], x_data, 0.03),
-    ([0,0,0], [6,7,3], x_data, 0.1),
+    # ([0,0,0], [6,7,3], x_data, hypothesis_linear, calc_cost_linear, 0.00003),
+    # ([0,0,0], [6,7,3], x_data, hypothesis_linear, calc_cost_linear, 0.0001),
+    # ([0,0,0], [6,7,3], x_data, hypothesis_linear, calc_cost_linear, 0.0003),
+    # ([0,0,0], [6,7,3], x_data, hypothesis_linear, calc_cost_linear, 0.001),
+    # ([0,0,0], [6,7,3], x_data, hypothesis_linear, calc_cost_linear, 0.003),
+    # ([0,0,0], [6,7,3], x_data, hypothesis_linear, calc_cost_linear, 0.01),
+    # ([0,0,0], [6,7,3], x_data, hypothesis_linear, calc_cost_linear, 0.03),
+    # ([0,0,0], [6,7,3], x_data, hypothesis_linear, calc_cost_linear, 0.1),
 
-    # ([0,0,0], [6,7,3], linear_noisy_factory(2), x_data, cost_func_linear, linear_hypothesis, 0.0001),
-    # ([0,0,0], [6,7,3], linear_noisy_factory(2), x_data, cost_func_linear, linear_hypothesis, 0.0003),
-    # ([0,0,0], [6,7,3], linear_noisy_factory(2), x_data, cost_func_linear, linear_hypothesis, 0.001),
-    # ([0,0,0], [6,7,3], linear_noisy_factory(2), x_data, cost_func_linear, linear_hypothesis, 0.003),
-    # ([0,0,0], [6,7,3], linear_noisy_factory(2), x_data, cost_func_linear, linear_hypothesis, 0.01),
-    # ([0,0,0], [6,7,3], linear_noisy_factory(2), x_data, cost_func_linear, linear_hypothesis, 0.03),
-    # ([0,0,0], [6,7,3], linear_noisy_factory(2), x_data, cost_func_linear, linear_hypothesis, 0.1),
+    # ([0,0,0], [6,7,-3], x_data, hypothesis_logistic, calc_cost_logistic, 0.00003),
+    # ([0,0,0], [6,7,-3], x_data, hypothesis_logistic, calc_cost_logistic, 0.0001),
+    # ([0,0,0], [6,7,-3], x_data, hypothesis_logistic, calc_cost_logistic, 0.0003),
+    # ([0,0,0], [6,7,-3], x_data, hypothesis_logistic, calc_cost_logistic, 0.001),
+    # ([0,0,0], [6,7,-3], x_data, hypothesis_logistic, calc_cost_logistic, 0.003),
+    ([0,0,0], [6,7,-3], x_data, hypothesis_logistic, calc_cost_logistic, 0.01),
+    ([0,0,0], [6,7,-3], x_data, hypothesis_logistic, calc_cost_logistic, 0.03),
+    ([0,0,0], [6,7,-3], x_data, hypothesis_logistic, calc_cost_logistic, 0.1),
 ]
 
 def run():
     performance = []
-    for init_p, real_p, X, lrn_rt in examples:
+    for init_p, real_p, X, hypothesis, calc_cost, lrn_rt in examples:
         # best practice: parameters are usually input as a column, 
         # Note: in numpy, transposing a vector makes no difference
         init_p = np.array(init_p).T
-        real_p = np.array(real_p).T 
+        real_p = np.array(real_p).T
         X = X.copy()
         m = len(X[0])
         X = np.vstack((np.ones(m), X))
-        targets = np.array(real_p).T.dot(X)
+        targets = hypothesis(real_p.T.dot(X))
         # X = scale_features(X)
 
         start = time.time()
-        res = descent(X, targets, init_p, lrn_rt=lrn_rt)
+        res = descent(X, targets, init_p, hypothesis, calc_cost, lrn_rt=lrn_rt)
         time_elapsed = time.time() - start
         performance.append((res, round(time_elapsed,2)))
     pprint(performance)
