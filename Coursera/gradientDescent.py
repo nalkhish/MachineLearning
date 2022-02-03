@@ -28,6 +28,15 @@ def plot_convergence(cost_history):
     r = ''
 
 def plot_logistic_2d(x0, x1, targets, theta):
+    """Plots a scatter of boolean predictions + boundary line
+
+    Args:
+        x0 (List): elements of the first axis
+        x1 (List): elements of the second axis
+        targets (List): values ranging from 0 to 1, representing the probability of a True
+        theta (List): for boundary line: slope parameters for the zeroth, first, and second axis
+    """
+    # plot the scatter, which blues representing false
     fig, ax = plt.subplots()
     colors = ['b' if p < 0.5 else 'r' for p in targets]
     ax.scatter(x0, x1, c=colors)
@@ -39,13 +48,13 @@ def plot_logistic_2d(x0, x1, targets, theta):
     x0_b = []
     x1_b = []
     b_points = 0
-    prev_prediction_is_positive = theta.dot([1, x0_min, x1_min]) >= 0
-    for i in range(x0_min + 1, x0_max + 1):
-        for j in range(x1_min - 1, x1_max + 1):
-            cur_prediction_is_positive = theta.dot([1, i, j]) >= 0
+    for j in range(x0_min, x0_max + 1):
+        prev_prediction_is_positive = theta.dot([1, j, x1_min, x1_min**2]) >= 0
+        for i in range(x1_min, x1_max + 1):
+            cur_prediction_is_positive = theta.dot([1, j, i, i**2]) >= 0
             if cur_prediction_is_positive != prev_prediction_is_positive:
-                x0_b.append(i)
-                x1_b.append(j)
+                x0_b.append(j)
+                x1_b.append(i)
                 b_points += 1
             prev_prediction_is_positive = cur_prediction_is_positive
     colors = ['k'] * b_points
@@ -60,7 +69,7 @@ def scale_features(x_data):
     """Scale features to even out descent"""
     n_features = len(x_data)
     for i in range(1, n_features):
-        x_data[i] = (x_data[i] - np.mean(x_data[i])) / (np.max(x_data[i]) - np.min(x_data[i]))
+        x_data[i] = (x_data[i] - np.mean(x_data[i])) / np.std(x_data[i])
     return x_data
 
 
@@ -145,9 +154,11 @@ examples = [
     # ([0,0,0], [6,7,-3], x_data, hypothesis_logistic, calc_cost_logistic, 0.0003),
     # ([0,0,0], [6,7,-3], x_data, hypothesis_logistic, calc_cost_logistic, 0.001),
     # ([0,0,0], [6,7,-3], x_data, hypothesis_logistic, calc_cost_logistic, 0.003),
-    ([0,0,0], [6,7,-3], x_data, hypothesis_logistic, calc_cost_logistic, 0.01),
-    ([0,0,0], [6,7,-3], x_data, hypothesis_logistic, calc_cost_logistic, 0.03),
-    ([0,0,0], [6,7,-3], x_data, hypothesis_logistic, calc_cost_logistic, 0.1),
+    # ([0,0,0], [6,7,-3], x_data, hypothesis_logistic, calc_cost_logistic, 0.01),
+    # ([0,0,0], [6,7,-3], x_data, hypothesis_logistic, calc_cost_logistic, 0.03),
+    # ([0,0,0], [6,7,-3], x_data, hypothesis_logistic, calc_cost_logistic, 0.1),
+
+    ([0,0,0,0], [-2,30,-4, -1], np.vstack((x_data, x_data[1]**2)), hypothesis_logistic, calc_cost_logistic, 1),
 ]
 
 def run():
@@ -161,6 +172,9 @@ def run():
         m = len(X[0])
         X = np.vstack((np.ones(m), X))
         targets = hypothesis(real_p.T.dot(X))
+
+        # plot_logistic_2d(X[1], X[2], targets, real_p)
+
         # X = scale_features(X)
 
         start = time.time()
