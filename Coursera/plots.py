@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from hypotheses import hypothesis_linear
 
+
 def plot_convergence(cost_history):
   its = len(cost_history)
   if its > 100:
@@ -30,7 +31,7 @@ def plot_linear_2d(X, y, thetas):
   x_min = min(X[1])
   x_max = max(X[1])
   X_S = np.array([np.ones(m), np.linspace(x_min, x_max, m)])
-  predictions = hypothesis_linear(thetas.T.dot(X_S))
+  predictions = hypothesis_linear(X_S, thetas)
   ax.plot(X_S[1], predictions, linewidth=2.0)
   plt.show()
   plt.xlabel('x')
