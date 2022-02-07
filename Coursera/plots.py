@@ -42,15 +42,14 @@ def plot_logistic_2d(X, targets, theta):
   """Plots a scatter of boolean predictions + boundary line
 
   Args:
-    x0 (List): elements of the first axis
-    x1 (List): elements of the second axis
+    x (List): Matrix
     targets (List): values ranging from 0 to 1, representing the probability of a True
     theta (List): for boundary line: slope parameters for the zeroth, first, and second axis
   """
   BOUNDARY_RESOLUTION = 100
   fig, ax = plt.subplots()
   x0, x1 = X[1], X[2]
-  # plot boundary line by finding plot's transition points (between thetaX >=0 and thetaX < 0)
+  # plot boundary by contouring based on prediction
   x0_max = max(x0)
   x0_min = min(x0)
   x1_max = max(x1)
