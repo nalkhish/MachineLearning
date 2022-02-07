@@ -4,7 +4,7 @@ from plots import plot_linear_2d
 from plots import plot_convergence, plot_logistic_2d
 
 DEF_TERMINAL_COST = 0.0001
-DEF_MAX_ITERATIONS = 10 ** 4
+DEF_MAX_ITERATIONS = 10 ** 5
 DEF_LEARNING_RATE = 0.001
 DEF_REG_P = 0
 DEF_MIN_DELTA = 0.001
@@ -35,8 +35,8 @@ def descent(X, targets, thetas, hypothesis, calc_cost, **kwargs):
     cost_history = np.append(cost_history, cost)
     n_its += 1
 
-  plot_linear_2d(X, targets, thetas)
-  # plot_logistic_2d(X[1], X[2], targets, thetas)
+  # plot_linear_2d(X, targets, thetas)
+  # plot_logistic_2d(X, targets, thetas)
   # plot_convergence(cost_history)
   return {
     "thetas": thetas,

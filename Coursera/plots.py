@@ -38,7 +38,7 @@ def plot_linear_2d(X, y, thetas):
   plt.ylabel('y')
 
 
-def plot_logistic_2d(x0, x1, targets, theta):
+def plot_logistic_2d(X, targets, theta):
   """Plots a scatter of boolean predictions + boundary line
 
   Args:
@@ -47,29 +47,30 @@ def plot_logistic_2d(x0, x1, targets, theta):
     targets (List): values ranging from 0 to 1, representing the probability of a True
     theta (List): for boundary line: slope parameters for the zeroth, first, and second axis
   """
-  # plot the scatter, which blues representing false
+  BOUNDARY_RESOLUTION = 100
   fig, ax = plt.subplots()
+  x0, x1 = X[1], X[2]
+  # plot boundary line by finding plot's transition points (between thetaX >=0 and thetaX < 0)
+  x0_max = max(x0)
+  x0_min = min(x0)
+  x1_max = max(x1)
+  x1_min = min(x1)
+  X0, X1 = np.meshgrid(np.linspace(x0_min, x0_max, BOUNDARY_RESOLUTION), np.linspace(x1_min, x1_max, BOUNDARY_RESOLUTION))
+
+  Z = np.zeros(X0.shape)
+  for i in range(len((Z))):
+    for j in range(len(Z)):
+      prediction = theta.dot([1, X0[i][j], X1[i][j]])
+      if prediction >= 0:
+        Z[i][j] = 1
+      else:
+        Z[i][j] = 0
+  ax.contourf(X0, X1, Z, levels=np.array([0, 0.5, 1]))
+
+  # plot the scatter, where blues representing false
   colors = ['b' if p < 0.5 else 'r' for p in targets]
   ax.scatter(x0, x1, c=colors)
-  # plot boundary line by finding plot's transition points (between thetaX >=0 and thetaX < 0)
-  x0_max = int(max(x0))
-  x0_min = int(min(x0))
-  x1_max = int(max(x1))
-  x1_min = int(min(x1))
-  x0_b = []
-  x1_b = []
-  b_points = 0
-  for j in range(x0_min, x0_max + 1):
-    prev_prediction_is_positive = theta.dot([1, j, x1_min, x1_min**2]) >= 0
-    for i in range(x1_min, x1_max + 1):
-      cur_prediction_is_positive = theta.dot([1, j, i, i**2]) >= 0
-      if cur_prediction_is_positive != prev_prediction_is_positive:
-        x0_b.append(j)
-        x1_b.append(i)
-        b_points += 1
-      prev_prediction_is_positive = cur_prediction_is_positive
-  colors = ['k'] * b_points
-  ax.scatter(x0_b, x1_b, c=colors)
+
 
   plt.show()
   plt.xlabel('x0')
