@@ -15,7 +15,7 @@ from pprint import pprint
 from plots import plot_logistic_2d, plot_linear_2d
 from utilities import scale_features
 from hypotheses import hypothesis_linear, hypothesis_logistic
-from costs import calc_cost_linear, calc_cost_logistic
+from costs import calc_cost_linear, calc_cost_logistic, calc_cost_multiclass_logistic
 from gradientDescent import descent
 
 
@@ -57,10 +57,14 @@ examples = [
 
   # 2d logistic regression, but nonlinear boundary
   # this produces a nonlinear boundary because it uses one feature's square. the resulting fit has a low percent error. Still, it's hard to reproduce the boundary in the resulting fit because the square gets divided by a different sd
-  ([0,0,0,0], [-2,300000,-4, -1], np.vstack((x_data_3d, x_data_3d[1]**2)), hypothesis_logistic, calc_cost_logistic, 0.01, 0),
-  ([0,0,0,0], [-2,300000,-4, -1], np.vstack((x_data_3d, x_data_3d[1]**2)), hypothesis_logistic, calc_cost_logistic, 0.1, 0),
-  ([0,0,0,0], [-2,300000,-4, -1], np.vstack((x_data_3d, x_data_3d[1]**2)), hypothesis_logistic, calc_cost_logistic, 1, 0),
-  ([0,0,0,0], [-2,300000,-4, -1], np.vstack((x_data_3d, x_data_3d[1]**2)), hypothesis_logistic, calc_cost_logistic, 3, 0),
+  # ([0,0,0,0], [-2,300000,-4, -1], np.vstack((x_data_3d, x_data_3d[1]**2)), hypothesis_logistic, calc_cost_logistic, 0.01, 0),
+  # ([0,0,0,0], [-2,300000,-4, -1], np.vstack((x_data_3d, x_data_3d[1]**2)), hypothesis_logistic, calc_cost_logistic, 0.1, 0),
+  # ([0,0,0,0], [-2,300000,-4, -1], np.vstack((x_data_3d, x_data_3d[1]**2)), hypothesis_logistic, calc_cost_logistic, 1, 0),
+  # ([0,0,0,0], [-2,300000,-4, -1], np.vstack((x_data_3d, x_data_3d[1]**2)), hypothesis_logistic, calc_cost_logistic, 3, 0),
+
+
+  # 2d logistic regression with multiple classes
+  ([[0,0,0], [0,0,0]], [[6,-200, 2],[6,120,-2]], x_data_3d, hypothesis_logistic, calc_cost_multiclass_logistic, 0.003, 0),
 ]
 
 
@@ -69,7 +73,7 @@ def run():
   for init_thetas, real_thetas, X_ORIG, hypothesis, calc_cost, lrn_rt, reg_p in examples:
     # don't overwrite X
     X = X_ORIG.copy()
-    # best practice: parameters are usually input as a column, Note: in numpy, transposing a vector makes no difference
+    # best practice: weight parameters usually have different features along the col axis, Note: in numpy, transposing a vector makes no difference
     init_thetas = np.array(init_thetas).T
     real_thetas = np.array(real_thetas).T
     # add bias feature
@@ -89,15 +93,24 @@ def run():
     samples = np.array([(X_ORIG[i]-means[i])/sds[i] for i in range(len(X_ORIG))])
     samples = np.vstack((np.ones(len(samples[0])), samples))
     predictions = hypothesis(samples, res['thetas'])
-    if hypothesis == hypothesis_logistic:
+    if calc_cost == calc_cost_logistic:
       percent_error = sum([1 if abs(predictions[i] - targets[i]) >= 0.5 else 0 for i in range(len(predictions))]) / len(predictions) * 100
+    elif calc_cost == calc_cost_multiclass_logistic:
+      percent_error = 0
+      for w in range(len(predictions)):
+        percent_error += sum([1 if abs(predictions[w][i] - targets[w][i]) >= 0.5 else 0 for i in range(len(predictions[w]))]) / len(predictions[w]) * 100
+      percent_error /= len(predictions)
     else:
       percent_error = max_percent_error = max(abs(predictions-targets)/targets * 100)
   
     # generate msg for performance log
     time_elapsed = f"ms={round(time.time() - start, 2)}"
-    thetas = ",".join([f"p{i}={round(p,2)}" for i, p in enumerate(res['thetas'])])
-    cost = f"cost={round(res['final_cost'], 2)}"
+    if calc_cost == calc_cost_multiclass_logistic:
+      thetas = ",".join([f"p{i}={round(p,2)}" for temp in res['thetas'].T for i, p in enumerate(temp)])
+      cost = ",".join([f"cost={round(cost, 2)}" for cost in res['final_cost']])
+    else:
+      thetas = ",".join([f"p{i}={round(p,2)}" for i, p in enumerate(res['thetas'])])
+      cost = f"cost={round(res['final_cost'], 2)}"
     iterations = f"its={res['iterations']}"
     msg = ";".join([thetas, cost, iterations, time_elapsed, f"pe={percent_error}"])
 

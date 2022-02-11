@@ -47,8 +47,8 @@ def plot_logistic_2d(X, targets, theta):
     theta (List): for boundary line: slope parameters for the zeroth, first, and second axis
   """
   BOUNDARY_RESOLUTION = 100
-  fig, ax = plt.subplots()
   x0, x1 = X[1], X[2]
+  fig, ax = plt.subplots()
   # plot boundary by contouring based on prediction
   x0_max = max(x0)
   x0_min = min(x0)
@@ -56,19 +56,27 @@ def plot_logistic_2d(X, targets, theta):
   x1_min = min(x1)
   X0, X1 = np.meshgrid(np.linspace(x0_min, x0_max, BOUNDARY_RESOLUTION), np.linspace(x1_min, x1_max, BOUNDARY_RESOLUTION))
 
-  Z = np.zeros(X0.shape)
-  for i in range(len((Z))):
-    for j in range(len(Z)):
-      prediction = theta.dot([1, X0[i][j], X1[i][j]])
-      if prediction >= 0:
-        Z[i][j] = 1
-      else:
-        Z[i][j] = 0
-  ax.contourf(X0, X1, Z, levels=np.array([0, 0.5, 1]))
+  TARGET_COLORS = ['red', 'yellow']
+  TRANSPARENCY = 0.2
+  for w in range(len(theta.T)):
+    Z = np.zeros(X0.shape)
+    for i in range(len((Z))):
+      for j in range(len(Z)):
+        prediction = theta.T[w].dot([1, X0[i][j], X1[i][j]])
+        if prediction >= 0:
+          Z[i][j] = 1
+        else:
+          Z[i][j] = 0
+    # CS = ax.contour(X0, X1, Z, colors=['red', 'blue', 'black'][w])
+    # ax.clabel(CS, inline=True, fontsize=20, manual=[(-5,0)])
+    ax.contourf(X0, X1, Z, levels=[0, 0.5, 1], colors=['blue', TARGET_COLORS[w]], alpha=TRANSPARENCY)
+    plt.show()
 
-  # plot the scatter, where blues representing false
-  colors = ['b' if p < 0.5 else 'r' for p in targets]
-  ax.scatter(x0, x1, c=colors)
+
+  # plot the scatter, where blues represent false.
+  for w in range(len(targets)):
+    colors = ['blue' if p < 0.5 else TARGET_COLORS[w] for p in targets[w]]
+    ax.scatter(x0, x1, c=colors, alpha=TRANSPARENCY)
 
 
   plt.show()

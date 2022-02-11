@@ -22,13 +22,13 @@ def descent(X, targets, thetas, hypothesis, calc_cost, **kwargs):
   deltas = np.full(len(thetas), float('inf'))
   n_its = 0
   while (
-      abs(sum(deltas)) > MIN_DELTA and
+      abs(deltas.sum()) > MIN_DELTA and
       n_its < MAX_ITS 
     ):
     predictions = hypothesis(X, thetas)
     errors = predictions - targets
-    deltas = (LRN_RT / m) * X.dot(errors)
-    reg_subtraction = np.full(len(thetas), LRN_RT * REG_P / m)
+    deltas = (LRN_RT / m) * X.dot(errors.T)
+    reg_subtraction = np.full(thetas.shape, LRN_RT * REG_P / m)
     reg_subtraction[0] = 0
     thetas = thetas * (1-reg_subtraction) - deltas
     cost = calc_cost(m, ers=errors, ts=targets, ps=predictions, thetas=thetas, reg_p=REG_P)
@@ -36,7 +36,7 @@ def descent(X, targets, thetas, hypothesis, calc_cost, **kwargs):
     n_its += 1
 
   # plot_linear_2d(X, targets, thetas)
-  # plot_logistic_2d(X, targets, thetas)
+  plot_logistic_2d(X, targets, thetas)
   # plot_convergence(cost_history)
   return {
     "thetas": thetas,
