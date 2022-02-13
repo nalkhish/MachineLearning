@@ -36,7 +36,7 @@ def descent(X, targets, thetas, hypothesis, calc_cost, **kwargs):
     n_its += 1
 
   # plot_linear_2d(X, targets, thetas)
-  plot_logistic_2d(X, targets, thetas)
+  # plot_logistic_2d(X, targets, thetas)
   # plot_convergence(cost_history)
   return {
     "thetas": thetas,

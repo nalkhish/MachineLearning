@@ -11,12 +11,29 @@ import time
 import random
 import numpy as np
 from pprint import pprint
+from percentErrors import percent_error_logistic, percent_error_multiclass_logistic, percent_error_standard
 
 from plots import plot_logistic_2d, plot_linear_2d
 from utilities import scale_features
 from hypotheses import hypothesis_linear, hypothesis_logistic
 from costs import calc_cost_linear, calc_cost_logistic, calc_cost_multiclass_logistic
 from gradientDescent import descent
+
+
+def get_msg(time_elapsed, percent_error, theta, cost, iterations):
+  iterations = f"its={iterations}"
+  return ";".join([theta, cost, iterations, time_elapsed, f"pe={percent_error}"])
+
+
+def get_thetas_cost(thetas, cost):
+  thetas = ",".join([f"p{i}={round(p,2)}" for i, p in enumerate(thetas)])
+  cost = f"cost={round(cost, 2)}"
+  return thetas, cost
+
+def get_thetas_costs_multiclass(thetas, costs):
+  thetas = ",".join([f"p{i}={round(p,2)}" for temp in thetas.T for i, p in enumerate(temp)])
+  costs = ",".join([f"cost={round(cost, 2)}" for cost in costs])
+  return thetas, costs
 
 
 arr0 = [29, 78, 18, 54, 89, 80, 35, 86, 41, 70, 89, 3, 55, 84, 9, 49, 41, 2, 47, 26, 72, 10, 65, 24, 18, 46, 24, 44, 93, 74, 18, 79, 79, 35, 36, 67, 21, 5, 2, 94, 62, 50, 26, 21, 56, 14, 36, 55, 70, 73, 76, 7, 45, 38, 6, 92, 34, 74, 89, 47, 27, 29, 54, 71, 31, 83, 19, 29, 81, 86, 56, 45, 47, 52, 42, 60, 72, 12, 9, 61, 17, 69, 69, 27, 58, 79, 35, 95, 7, 8, 41, 54, 31, 14, 59, 89, 15, 27, 59, 22]
@@ -32,45 +49,45 @@ x_data_neg_3d = np.array([arr_neg_0, arr0], dtype="float64")
 
 examples = [
   # Basic linear regression
-  # ([0,0], [6,7], x_data_2d, hypothesis_linear, calc_cost_linear, 0.001, 0),
-  # ([0,0], [6,7], x_data_2d, hypothesis_linear, calc_cost_linear, 0.003, 0),
-  # ([0,0], [6,7], x_data_2d, hypothesis_linear, calc_cost_linear, 0.01, 0),
-  # ([0,0], [6,7], x_data_2d, hypothesis_linear, calc_cost_linear, 0.03, 0),
-  # ([0,0], [6,7], x_data_2d, hypothesis_linear, calc_cost_linear, 0.1, 0),
+  ([0,0], [6,7], x_data_2d, hypothesis_linear, calc_cost_linear, percent_error_standard, 0.001, 0, get_thetas_cost),
+  ([0,0], [6,7], x_data_2d, hypothesis_linear, calc_cost_linear, percent_error_standard, 0.003, 0, get_thetas_cost),
+  ([0,0], [6,7], x_data_2d, hypothesis_linear, calc_cost_linear, percent_error_standard, 0.01, 0, get_thetas_cost),
+  ([0,0], [6,7], x_data_2d, hypothesis_linear, calc_cost_linear, percent_error_standard, 0.03, 0, get_thetas_cost),
+  ([0,0], [6,7], x_data_2d, hypothesis_linear, calc_cost_linear, percent_error_standard, 0.1, 0, get_thetas_cost),
 
   # Multiple linear regression
-  # ([0,0,0], [6,7,23], x_data_3d, hypothesis_linear, calc_cost_linear, 0.001, 0),
-  # ([0,0,0], [6,7,23], x_data_3d, hypothesis_linear, calc_cost_linear, 0.003, 0),
-  # ([0,0,0], [6,7,23], x_data_3d, hypothesis_linear, calc_cost_linear, 0.01, 0),
-  # ([0,0,0], [6,7,23], x_data_3d, hypothesis_linear, calc_cost_linear, 0.03, 0),
-  # ([0,0,0], [6,7,23], x_data_3d, hypothesis_linear, calc_cost_linear, 0.1, 0),
+  ([0,0,0], [6,7,23], x_data_3d, hypothesis_linear, calc_cost_linear, percent_error_standard, 0.001, 0, get_thetas_cost),
+  ([0,0,0], [6,7,23], x_data_3d, hypothesis_linear, calc_cost_linear, percent_error_standard, 0.003, 0, get_thetas_cost),
+  ([0,0,0], [6,7,23], x_data_3d, hypothesis_linear, calc_cost_linear, percent_error_standard, 0.01, 0, get_thetas_cost),
+  ([0,0,0], [6,7,23], x_data_3d, hypothesis_linear, calc_cost_linear, percent_error_standard, 0.03, 0, get_thetas_cost),
+  ([0,0,0], [6,7,23], x_data_3d, hypothesis_linear, calc_cost_linear, percent_error_standard, 0.1, 0, get_thetas_cost),
 
   # 2d logistic regression. uses 3d data because we need an extra dimension for the choice
-  # ([0,0,0], [6,120,-2], x_data_3d, hypothesis_logistic, calc_cost_logistic, 0.003, 0),
-  # ([0,0,0], [6,120,-2], x_data_3d, hypothesis_logistic, calc_cost_logistic, 0.01, 0),
-  # ([0,0,0], [6,120,-2], x_data_3d, hypothesis_logistic, calc_cost_logistic, 0.03, 0),
-  # ([0,0,0], [6,120,-2], x_data_3d, hypothesis_logistic, calc_cost_logistic, 0.1, 0),
-  # ([0,0,0], [6,120,-2], x_data_3d, hypothesis_logistic, calc_cost_logistic, 1, 0),
-  # ([0,0,0], [6,120,-2], x_data_3d, hypothesis_logistic, calc_cost_logistic, 3, 0),
-  # ([0,0,0], [6,120,-2], x_data_3d, hypothesis_logistic, calc_cost_logistic, 10, 0),
-  # ([0,0,0], [6,120,-2], x_data_3d, hypothesis_logistic, calc_cost_logistic, 30, 0),  
+  ([0,0,0], [6,120,-2], x_data_3d, hypothesis_logistic, calc_cost_logistic, percent_error_logistic, 0.003, 0, get_thetas_cost),
+  ([0,0,0], [6,120,-2], x_data_3d, hypothesis_logistic, calc_cost_logistic, percent_error_logistic, 0.01, 0, get_thetas_cost),
+  ([0,0,0], [6,120,-2], x_data_3d, hypothesis_logistic, calc_cost_logistic, percent_error_logistic, 0.03, 0, get_thetas_cost),
+  ([0,0,0], [6,120,-2], x_data_3d, hypothesis_logistic, calc_cost_logistic, percent_error_logistic, 0.1, 0, get_thetas_cost),
+  ([0,0,0], [6,120,-2], x_data_3d, hypothesis_logistic, calc_cost_logistic, percent_error_logistic, 1, 0, get_thetas_cost),
+  ([0,0,0], [6,120,-2], x_data_3d, hypothesis_logistic, calc_cost_logistic, percent_error_logistic, 3, 0, get_thetas_cost),
+  ([0,0,0], [6,120,-2], x_data_3d, hypothesis_logistic, calc_cost_logistic, percent_error_logistic, 10, 0, get_thetas_cost),
+  ([0,0,0], [6,120,-2], x_data_3d, hypothesis_logistic, calc_cost_logistic, percent_error_logistic, 30, 0, get_thetas_cost),  
 
   # 2d logistic regression, but nonlinear boundary
   # this produces a nonlinear boundary because it uses one feature's square. the resulting fit has a low percent error. Still, it's hard to reproduce the boundary in the resulting fit because the square gets divided by a different sd
-  # ([0,0,0,0], [-2,300000,-4, -1], np.vstack((x_data_3d, x_data_3d[1]**2)), hypothesis_logistic, calc_cost_logistic, 0.01, 0),
-  # ([0,0,0,0], [-2,300000,-4, -1], np.vstack((x_data_3d, x_data_3d[1]**2)), hypothesis_logistic, calc_cost_logistic, 0.1, 0),
-  # ([0,0,0,0], [-2,300000,-4, -1], np.vstack((x_data_3d, x_data_3d[1]**2)), hypothesis_logistic, calc_cost_logistic, 1, 0),
-  # ([0,0,0,0], [-2,300000,-4, -1], np.vstack((x_data_3d, x_data_3d[1]**2)), hypothesis_logistic, calc_cost_logistic, 3, 0),
+  ([0,0,0,0], [-2,300000,-4, -1], np.vstack((x_data_3d, x_data_3d[1]**2)), hypothesis_logistic, calc_cost_logistic, percent_error_logistic, 0.01, 0, get_thetas_cost),
+  ([0,0,0,0], [-2,300000,-4, -1], np.vstack((x_data_3d, x_data_3d[1]**2)), hypothesis_logistic, calc_cost_logistic, percent_error_logistic, 0.1, 0, get_thetas_cost),
+  ([0,0,0,0], [-2,300000,-4, -1], np.vstack((x_data_3d, x_data_3d[1]**2)), hypothesis_logistic, calc_cost_logistic, percent_error_logistic, 1, 0, get_thetas_cost),
+  ([0,0,0,0], [-2,300000,-4, -1], np.vstack((x_data_3d, x_data_3d[1]**2)), hypothesis_logistic, calc_cost_logistic, percent_error_logistic, 3, 0, get_thetas_cost),
 
 
   # 2d logistic regression with multiple classes
-  ([[0,0,0], [0,0,0]], [[6,-200, 2],[6,120,-2]], x_data_3d, hypothesis_logistic, calc_cost_multiclass_logistic, 0.003, 0),
+  ([[0,0,0], [0,0,0]], [[6,-200, 2],[6,120,-2]], x_data_3d, hypothesis_logistic, calc_cost_multiclass_logistic, percent_error_multiclass_logistic, 0.003, 0, get_thetas_costs_multiclass),
 ]
 
 
 def run():
   performance = []
-  for init_thetas, real_thetas, X_ORIG, hypothesis, calc_cost, lrn_rt, reg_p in examples:
+  for init_thetas, real_thetas, X_ORIG, hypothesis, calc_cost, calc_pe, lrn_rt, reg_p, parse_thetas_costs in examples:
     # don't overwrite X
     X = X_ORIG.copy()
     # best practice: weight parameters usually have different features along the col axis, Note: in numpy, transposing a vector makes no difference
@@ -93,26 +110,12 @@ def run():
     samples = np.array([(X_ORIG[i]-means[i])/sds[i] for i in range(len(X_ORIG))])
     samples = np.vstack((np.ones(len(samples[0])), samples))
     predictions = hypothesis(samples, res['thetas'])
-    if calc_cost == calc_cost_logistic:
-      percent_error = sum([1 if abs(predictions[i] - targets[i]) >= 0.5 else 0 for i in range(len(predictions))]) / len(predictions) * 100
-    elif calc_cost == calc_cost_multiclass_logistic:
-      percent_error = 0
-      for w in range(len(predictions)):
-        percent_error += sum([1 if abs(predictions[w][i] - targets[w][i]) >= 0.5 else 0 for i in range(len(predictions[w]))]) / len(predictions[w]) * 100
-      percent_error /= len(predictions)
-    else:
-      percent_error = max_percent_error = max(abs(predictions-targets)/targets * 100)
+    percent_error = calc_pe(predictions, targets)
   
     # generate msg for performance log
     time_elapsed = f"ms={round(time.time() - start, 2)}"
-    if calc_cost == calc_cost_multiclass_logistic:
-      thetas = ",".join([f"p{i}={round(p,2)}" for temp in res['thetas'].T for i, p in enumerate(temp)])
-      cost = ",".join([f"cost={round(cost, 2)}" for cost in res['final_cost']])
-    else:
-      thetas = ",".join([f"p{i}={round(p,2)}" for i, p in enumerate(res['thetas'])])
-      cost = f"cost={round(res['final_cost'], 2)}"
-    iterations = f"its={res['iterations']}"
-    msg = ";".join([thetas, cost, iterations, time_elapsed, f"pe={percent_error}"])
+    thetas, cost = parse_thetas_costs(res['thetas'], res['final_cost'])
+    msg = get_msg(time_elapsed, percent_error, thetas, cost, res['iterations'])
 
     performance.append(msg)
 
